@@ -24,20 +24,34 @@ except:
 
 changed = False
 
+# 模擬完整瀏覽器 User-Agent
+headers = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+}
+
 for p in products:
-    html = requests.get(
-        p["url"],
-        headers={"User-Agent": "Mozilla/5.0"}
-    ).text
+    try:
+        html = requests.get(p["url"], headers=headers, timeout=10).text
+    except Exception as e:
+        send(f"⚠️ 無法抓取 {p['name']} 網頁: {e}")
+        continue
 
     # 正則抓價格
     match = re.search(r'\$([0-9]+\.[0-9]+)', html)
 
     if not match:
+        # 抓不到價格，打印前 500 字方便 debug
+        print(f"⚠️ 無法抓到 {p['name']} 的價格，HTML 前500字:")
+        print(html[:500])
+        send(f"⚠️ {p['name']} 抓不到價格，請檢查防爬蟲或網頁變更")
         continue
 
     price = float(match.group(1))
-    print(p["name"], price)
+    print(f"{p['name']} 目前價格: {price}")
 
     notified = status.get(p["name"], False)
 
