@@ -1,6 +1,5 @@
 import requests
 import json
-import re
 import os
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -13,34 +12,18 @@ def send(msg):
         "text": msg
     })
 
+# 讀產品
 products = json.load(open("products.json"))
 
+# 發送測試訊息
 for p in products:
+    msg = f"""🧪 TEST MESSAGE
 
-    html = requests.get(
-        p["url"],
-        headers={"User-Agent": "Mozilla/5.0"}
-    ).text
+Product: {p['name']}
+URL: {p['url']}
+Target: {p['target']}
 
-    match = re.search(r'\$([0-9]+\.[0-9]+)', html)
-
-    if not match:
-        continue
-
-    price = float(match.group(1))
-
-    print(p["name"], price)
-
-    if price <= p["target"]:
-
-        msg = f"""🔥 Price Drop!
-
-{p['name']}
-
-Price: ${price}
-Target: ${p['target']}
-
-{p['url']}
+This is a test to confirm your Telegram bot works.
 """
-
-        send(msg)
+    send(msg)
+    print(f"Sent test message for {p['name']}")
