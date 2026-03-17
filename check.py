@@ -1,5 +1,6 @@
 import requests
 import json
+import re
 import os
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -12,18 +13,55 @@ def send(msg):
         "text": msg
     })
 
-# 讀產品
+# 讀產品列表
 products = json.load(open("products.json"))
 
-# 發送測試訊息
+# 讀狀態檔
+try:
+    status = json.load(open("price_status.json"))
+except:
+    status = {}
+
+changed = False
+
 for p in products:
-    msg = f"""🧪 TEST MESSAGE
+    html = requests.get(
+        p["url"],
+        headers={"User-Agent": "Mozilla/5.0"}
+    ).text
 
-Product: {p['name']}
-URL: {p['url']}
-Target: {p['target']}
+    # 正則抓價格
+    match = re.search(r'\$([0-9]+\.[0-9]+)', html)
 
-This is a test to confirm your Telegram bot works.
+    if not match:
+        continue
+
+    price = float(match.group(1))
+    print(p["name"], price)
+
+    notified = status.get(p["name"], False)
+
+    # 價格低於 target 且未通知 → 發送 Telegram
+    if price <= p["target"] and not notified:
+        msg = f"""🔥 Price Drop!
+
+{p['name']}
+
+Price: ${price}
+Target: ${p['target']}
+
+{p['url']}
 """
-    send(msg)
-    print(f"Sent test message for {p['name']}")
+        send(msg)
+        status[p["name"]] = True
+        changed = True
+
+    # 價格回升 → 重置通知狀態
+    elif price > p["target"] and notified:
+        status[p["name"]] = False
+        changed = True
+
+# 儲存狀態
+if changed:
+    with open("price_status.json", "w") as f:
+        json.dump(status, f)
