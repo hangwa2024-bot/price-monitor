@@ -2,8 +2,11 @@ name: price-check
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # 每 5 分鐘執行
-  workflow_dispatch:        # 可手動觸發
+    - cron: "0 */3 * * *"   # 每 3 小時
+  workflow_dispatch:        # 可手動執行
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   run:
